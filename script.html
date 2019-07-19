@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Test task</title>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+    <script src="//code.jquery.com/jquery-1.9.1.js"></script>
+</head>
+
+<body>
+<h2>List of cats</h2>
+
+<div id="tableCatsList">
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Age</th>
+            <th>Gender</th>
+            <th>Color</th>
+        </tr>
+
+        <?php foreach ($catsList as $key => $cat): ?>
+            <tr>
+                <td><input type="text" id="inputName<?= $cat->id ?>" value="<?= $cat->name ?>" disabled></td>
+                <td><input type="number" id="inputAge<?= $cat->id ?>" value="<?= $cat->age ?>" disabled></td>
+                <td><input type="text" id="inputGender<?= $cat->id ?>" value="<?= $cat->gender ?>" disabled></td>
+                <td><input type="text" id="inputColor<?= $cat->id ?>" value="<?= $cat->color ?>" disabled></td>
+                <td>
+                    <button id="buttonEdit<?= $cat->id ?>" name="buttonEdit"
+                            value="<?= $cat->id ?>">
+                        Edit
+                    </button>
+                </td>
+                <td>
+                    <button id="buttonSave<?= $cat->id ?>" name="buttonSave"
+                            value="<?= $cat->id ?>" disabled>
+                        Save
+                    </button>
+                </td>
+                <td>
+                    <button id="buttonDelete<?= $cat->id ?>" name="buttonDelete"
+                            value="<?= $cat->id ?>">
+                        Delete
+                    </button>
+                </td>
+            </tr>
+        <?php endforeach; ?>
+    </table>
+</div>
+<p>
+<div id="messageDelete"></div>
+</p>
+<p>
+<div id="messageEdit"></div>
+</p>
+
+<button id="buttonAdd">Add new cat</button>
+<div id="tableAdd">
+    <table>
+        <tr>
+            <td><input type="text" id="inputName"></td>
+            <td><input type="number" id="inputAge"></td>
+            <td><input type="text" id="inputGender"></td>
+            <td><input type="text" id="inputColor"></td>
+            <td>
+                <button id="buttonSaveNew">Save</button>
+            </td>
+        </tr>
+    </table>
+</div>
+<p>
+<div id="messageSaveNew"></div>
+</p>
+
+</body>
+
+<script>
+    $(document).ready(function () {
+        $("#tableAdd").hide();
+
+        $("#buttonAdd").on('click', function () {
+            $("#messageSaveNew").text('');
+            if ($("#tableAdd").is(':visible'))
+                $("#tableAdd").hide();
+
+            else
+                $("#tableAdd").show();
+        });
+
+        $("#buttonSaveNew").on('click', function () {
+            var $name = $("#inputName").val();
+            var $age = $("#inputAge").val();
+            var $gender = $("#inputGender").val();
+            var $color = $("#inputColor").val();
+
+            var catNewData = new FormData();
+            catNewData.append('name', $name);
+            catNewData.append('age', $age);
+            catNewData.append('gender', $gender);
+            catNewData.append('color', $color);
+
+            $.ajax({
+                url: 'add.php',
+                type: 'POST',
+                dataType: 'json',
+                data: catNewData,
+                processData: false,
+                contentType: false,
+                success: function (data) {
+                    if (data['data'] == 'ok') {
+                        $("#tableAdd").hide();
+
+                        $("#inputName").val('');
+                        $("#inputAge").val('');
+                        $("#inputGender").val('');
+                        $("#inputColor").val('');
+
+                        $("#messageSaveNew").text('Success');
+
+                        $("#tableCatsList").load('script.php #tableCatsList > *');
+                    } else if (data['data'] == 'error')
+                        $("#messageSaveNew").text('Error');
+                    else
+                        $("#messageSaveNew").text('Field(s) is(are) empty');
+                }
+            });
+        });
+
+        $("#tableCatsList").on('click', 'button[name="buttonDelete"]', function () {
+            var $buttonId = $(this).attr('id');
+            var $id = $("#" + $buttonId).val();
+
+            var catDeleteData = new FormData();
+            catDeleteData.append('id', $id);
+
+            $.ajax({
+                url: 'delete.php',
+                type: 'POST',
+                dataType: 'json',
+                data: catDeleteData,
+                processData: false,
+                contentType: false,
+                success: function (data) {
+                    if (data['data'] == 'ok') {
+                        $("#messageDelete").text('Delete: Success');
+                        $("#tableCatsList").load('script.php #tableCatsList > *');
+                    } else if (data['data'] == 'error')
+                        $("#messageDelete").text('Delete: Error');
+                    else
+                        $("#messageDelete").text('Delete: Empty');
+                }
+            });
+        });
+
+        $("#tableCatsList").on('click', 'button[name="buttonEdit"]', function () {
+            var $buttonId = $(this).attr('id');
+            var $id = $("#" + $buttonId).val();
+
+            $("#inputName" + $id).prop("disabled", false);
+            $("#inputAge" + $id).prop("disabled", false);
+            $("#inputGender" + $id).prop("disabled", false);
+            $("#inputColor" + $id).prop("disabled", false);
+
+            $("#" + $buttonId).prop("disabled", true);
+            $("#buttonSave" + $id).prop("disabled", false);
+        });
+
+        $("#tableCatsList").on('click', 'button[name="buttonSave"]', function () {
+            var $buttonId = $(this).attr('id');
+            var $id = $("#" + $buttonId).val();
+
+            $("#inputName" + $id).prop("disabled", true);
+            $("#inputAge" + $id).prop("disabled", true);
+            $("#inputGender" + $id).prop("disabled", true);
+            $("#inputColor" + $id).prop("disabled", true);
+
+            $("#" + $buttonId).prop("disabled", true);
+            $("#buttonEdit" + $id).prop("disabled", false);
+
+            var $name = $("#inputName" + $id).val();
+            var $age = $("#inputAge" + $id).val();
+            var $gender = $("#inputGender" + $id).val();
+            var $color = $("#inputColor" + $id).val();
+
+            var catEditData = new FormData();
+            catEditData.append('id', $id);
+            catEditData.append('name', $name);
+            catEditData.append('age', $age);
+            catEditData.append('gender', $gender);
+            catEditData.append('color', $color);
+
+            $.ajax({
+                url: 'edit.php',
+                type: 'POST',
+                dataType: 'json',
+                data: catEditData,
+                processData: false,
+                contentType: false,
+                success: function (data) {
+                    if (data['data'] == 'ok') {
+                        $("#messageEdit").text('Edit: Success');
+                    } else if (data['data'] == 'error')
+                        $("#messageEdit").text('Edit: Error');
+                    else
+                        $("#messageEdit").text('Edit: Empty');
+                    $("#tableCatsList").load('script.php #tableCatsList > *');
+                }
+            });
+        });
+    });
+</script>
+
+</html>
